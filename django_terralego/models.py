@@ -6,7 +6,7 @@ from terralego import geodirectory
 
 
 class GeoDirectoryMixin(models.Model):
-    terralego_id = models.UUIDField(verbose_name=_('Terralego id'), editable=False)
+    terralego_id = models.UUIDField(verbose_name=_('Terralego id'), editable=False, null=True)
 
     class Meta:
         abstract = True
@@ -21,16 +21,21 @@ class GeoDirectoryMixin(models.Model):
         data = cache.get(key)
         if data is None:
             data = geodirectory.get_entry(self.terralego_id)
-            # FIXME Handle HttpError
-            cache.set(key, data, 3600)
+            self._update_from_terralego_data(data)
         return data
+
+    def _update_from_terralego_data(self, data):
+        self.terralego_id = data['id']
+        self._geometry = data['geometry']
+        self._tags = data['properties']['tags']
+        cache.set(self._get_cache_key(), data, 3600)
 
     _geometry = None
 
     @property
     def geometry(self):
-        if self._geometry is None:
-            self._geometry = self._get_terralego_entry()['geometry']
+        if self._geometry is None and self.terralego_id is not None:
+            self._get_terralego_entry()
         return self._geometry
 
     @geometry.setter
@@ -42,8 +47,8 @@ class GeoDirectoryMixin(models.Model):
 
     @property
     def tags(self):
-        if self._tags is None:
-            self._tags = self._get_terralego_entry()['properties']['tags']
+        if self._tags is None and self.terralego_id is not None:
+            self._get_terralego_entry()
         return self._tags
 
     @tags.setter
@@ -55,9 +60,8 @@ class GeoDirectoryMixin(models.Model):
         if self._terralego_update_required:
             if self.terralego_id is None:
                 data = geodirectory.create_entry(self.geometry, self.tags)
-                self.terralego_id = data['id']
-                cache.set(self._get_cache_key(), data, 3600)
             else:
-                geodirectory.update_entry(self.terralego_id, self.geometry, self.tags)
+                data = geodirectory.update_entry(self.terralego_id, self.geometry, self.tags)
+            self._update_from_terralego_data(data)
             self._terralego_update_required = False
         return super(GeoDirectoryMixin, self).save(*args, **kwargs)
