@@ -1,3 +1,4 @@
+import json
 from unittest import mock
 
 from django.test import TestCase
@@ -22,7 +23,7 @@ GEOJSON_SAMPLE = {
     ],
     "properties": {
         "tags": [
-            "test",
+            "django_terralego.Dummy",
             "toto"
         ]
     }
@@ -60,3 +61,30 @@ class GeoDirectoryMixinTest(TestCase):
         self.assertEqual(dummy.geometry, GEOJSON_SAMPLE['geometry'])
         self.assertEqual(dummy.tags, GEOJSON_SAMPLE['properties']['tags'])
         self.assertEqual(mocked_get.call_count, 1)
+
+    @mock.patch('requests.post')
+    def test_save_without_model_path_in_tags(self, mocked_post):
+        mocked_response = mock.MagicMock()
+        mocked_response.json.return_value = GEOJSON_SAMPLE
+        mocked_post.return_value = mocked_response
+        dummy = Dummy()
+        dummy.geometry = 'POINT(-104.590948 38.319914)'
+        dummy.tags = []
+        dummy.save()
+        self.assertEqual(mocked_post.call_count, 1)
+        tags = mocked_post.mock_calls[0][2]['data']['tags']
+        self.assertEqual(tags, json.dumps(['django_terralego.Dummy']))
+
+
+    @mock.patch('requests.post')
+    def test_save_with_model_path_in_wrong_position_in_tags(self, mocked_post):
+        mocked_response = mock.MagicMock()
+        mocked_response.json.return_value = GEOJSON_SAMPLE
+        mocked_post.return_value = mocked_response
+        dummy = Dummy()
+        dummy.geometry = 'POINT(-104.590948 38.319914)'
+        dummy.tags = ['test', 'django_terralego.Dummy']
+        dummy.save()
+        self.assertEqual(mocked_post.call_count, 1)
+        tags = mocked_post.mock_calls[0][2]['data']['tags']
+        self.assertEqual(tags, json.dumps(['django_terralego.Dummy', 'test']))
