@@ -3,7 +3,10 @@ import os
 from django.conf import settings
 
 
-terralego_settings = settings.get('TERRALEGO', {})
+try:
+    terralego_settings = settings.TERRALEGO
+except AttributeError:
+    terralego_settings = {}
 
 if 'URL' in terralego_settings:
     os.environ['TERRALEGO_URL'] = terralego_settings['URL']

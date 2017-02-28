@@ -1,33 +1,31 @@
-from django.core.cache import cache
+import json
+
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from djgeojson.fields import GeometryField
 
 from terralego import geodirectory
 
 
 class GeoDirectoryMixin(models.Model):
+    """
+    A model with a corresponding entry in Terralego.
+
+    The entry will be updated at every save.
+    You can pass `terralego_commit` at False to force not updating the entry.
+
+    This model is designed to be one-way only. This means that it won't update from terralego automatically.
+    If you update the entry from somewhere else, you will have to call `_update_from_terralego_entry` manually.
+    """
+
     terralego_id = models.UUIDField(verbose_name=_('Terralego id'), editable=False, null=True)
+    terralego_last_update = models.DateTimeField(_('Terralego last update'), editable=False, null=True)
+    terralego_geometry = GeometryField(_('Terralego geometry field'), blank=True, null=True)
+    terralego_tags = models.TextField(_('Terralego tags'), blank=True, null=True)  # JSON list of tags
 
     class Meta:
         abstract = True
-
-    _terralego_update_required = False
-
-    def _get_cache_key(self):
-        return 'terralego-geodirectory-{entry_id}'.format(entry_id=self.terralego_id)
-
-    def _get_terralego_entry(self):
-        """
-        Get the terralego entry related to self.terralego_id and update the instance tags and geometry.
-
-        :return: The geojson representing the entry.
-        """
-        key = self._get_cache_key()
-        data = cache.get(key)
-        if data is None:
-            data = geodirectory.get_entry(self.terralego_id)
-            self._update_from_terralego_data(data)
-        return data
 
     def _update_from_terralego_data(self, data):
         """
@@ -36,62 +34,45 @@ class GeoDirectoryMixin(models.Model):
         :param data: the geojson representing the entry
         """
         self.terralego_id = data['id']
-        self._geometry = data['geometry']
-        self._tags = data['properties']['tags']
-        cache.set(self._get_cache_key(), data, 3600)
+        self.terralego_last_update = timezone.now()
+        self.terralego_geometry = data['geometry']
+        self.terralego_tags = json.dumps(data['properties']['tags'])
+
+    def _update_tags_with_model(self, tags):
+        model_path = '{0}.{1}'.format(self._meta.app_label, self._meta.object_name)
+        if tags is None:
+            tags = []
+        if model_path not in tags:
+            # Add the model_path to the tags
+            tags.insert(0, model_path)
+        elif tags[0] != model_path:
+            # The model_path is already there but not in first place
+            tags.remove(model_path)
+            tags.insert(0, model_path)
+        return tags
+
+    def _update_from_terralego_entry(self):
+        """
+        Get the terralego entry related to self.terralego_id and update the instance tags and geometry.
+        """
+        if self.terralego_id is not None:
+            data = geodirectory.get_entry(self.terralego_id)
+            self._update_from_terralego_data(data)
 
     def _save_to_terralego(self):
         """
         Create or update the entry in terralego, adding the model_path to the tags if needed.
         """
-        model_path = '{0}.{1}'.format(self._meta.app_label, self._meta.object_name)
-        if self.tags is None:
-            self.tags = []
-        if model_path not in self.tags:
-            # Add the model_path to the tags
-            tags = self.tags
-            tags.insert(0, model_path)
-            self.tags = tags
-        elif self.tags[0] != model_path:
-            # The model_path is already there but not in first place
-            tags = self.tags
-            tags.remove(model_path)
-            tags.insert(0, model_path)
-            self.tags = tags
+        tags = self.terralego_tags and json.loads(self.terralego_tags) or None
+        self.terralego_tags = self._update_tags_with_model(tags)
         if self.terralego_id is None:
-            data = geodirectory.create_entry(self.geometry, self.tags)
+            data = geodirectory.create_entry(self.terralego_geometry, self.terralego_tags)
         else:
-            data = geodirectory.update_entry(self.terralego_id, self.geometry, self.tags)
+            data = geodirectory.update_entry(self.terralego_id, self.terralego_geometry, self.terralego_tags)
         self._update_from_terralego_data(data)
-        self._terralego_update_required = False
-
-    _geometry = None
-
-    @property
-    def geometry(self):
-        if self._geometry is None and self.terralego_id is not None:
-            self._get_terralego_entry()
-        return self._geometry
-
-    @geometry.setter
-    def geometry(self, geometry):
-        self._geometry = geometry
-        self._terralego_update_required = True
-
-    _tags = None
-
-    @property
-    def tags(self):
-        if self._tags is None and self.terralego_id is not None:
-            self._get_terralego_entry()
-        return self._tags
-
-    @tags.setter
-    def tags(self, tags):
-        self._tags = tags
-        self._terralego_update_required = True
 
     def save(self, *args, **kwargs):
-        if self._terralego_update_required:
+        terralego_commit = kwargs.pop('terralego_commit', True)
+        if terralego_commit and self.terralego_geometry is not None:
             self._save_to_terralego()
         return super(GeoDirectoryMixin, self).save(*args, **kwargs)

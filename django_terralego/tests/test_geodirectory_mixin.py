@@ -45,11 +45,11 @@ class GeoDirectoryMixinTest(TestCase):
         mocked_response.json.return_value = GEOJSON_SAMPLE
         mocked_post.return_value = mocked_response
         dummy = Dummy()
-        dummy.geometry = 'POINT(-104.590948 38.319914)'
+        dummy.terralego_geometry = 'POINT(-104.590948 38.319914)'
         dummy.save()
         self.assertEqual(dummy.terralego_id, GEOJSON_SAMPLE['id'])
-        self.assertEqual(dummy.geometry, GEOJSON_SAMPLE['geometry'])
-        self.assertEqual(dummy.tags, GEOJSON_SAMPLE['properties']['tags'])
+        self.assertEqual(dummy.terralego_geometry, GEOJSON_SAMPLE['geometry'])
+        self.assertEqual(dummy.terralego_tags, json.dumps(GEOJSON_SAMPLE['properties']['tags']))
         self.assertEqual(mocked_post.call_count, 1)
 
     @mock.patch('requests.get')
@@ -58,8 +58,9 @@ class GeoDirectoryMixinTest(TestCase):
         mocked_response.json.return_value = GEOJSON_SAMPLE
         mocked_get.return_value = mocked_response
         dummy = Dummy(terralego_id=GEOJSON_SAMPLE['id'])
-        self.assertEqual(dummy.geometry, GEOJSON_SAMPLE['geometry'])
-        self.assertEqual(dummy.tags, GEOJSON_SAMPLE['properties']['tags'])
+        dummy._update_from_terralego_entry()
+        self.assertEqual(dummy.terralego_geometry, GEOJSON_SAMPLE['geometry'])
+        self.assertEqual(dummy.terralego_tags, json.dumps(GEOJSON_SAMPLE['properties']['tags']))
         self.assertEqual(mocked_get.call_count, 1)
 
     @mock.patch('requests.post')
@@ -68,8 +69,8 @@ class GeoDirectoryMixinTest(TestCase):
         mocked_response.json.return_value = GEOJSON_SAMPLE
         mocked_post.return_value = mocked_response
         dummy = Dummy()
-        dummy.geometry = 'POINT(-104.590948 38.319914)'
-        dummy.tags = []
+        dummy.terralego_geometry = 'POINT(-104.590948 38.319914)'
+        dummy.terralego_tags = json.dumps([])
         dummy.save()
         self.assertEqual(mocked_post.call_count, 1)
         tags = mocked_post.mock_calls[0][2]['data']['tags']
@@ -81,8 +82,8 @@ class GeoDirectoryMixinTest(TestCase):
         mocked_response.json.return_value = GEOJSON_SAMPLE
         mocked_post.return_value = mocked_response
         dummy = Dummy()
-        dummy.geometry = 'POINT(-104.590948 38.319914)'
-        dummy.tags = ['test', 'django_terralego.Dummy']
+        dummy.terralego_geometry = 'POINT(-104.590948 38.319914)'
+        dummy.terralego_tags = json.dumps(['test', 'django_terralego.Dummy'])
         dummy.save()
         self.assertEqual(mocked_post.call_count, 1)
         tags = mocked_post.mock_calls[0][2]['data']['tags']

@@ -1,2 +1,4 @@
 terralego==0.1
 Django
+django-geojson[field]==2.10.0
+django-leaflet==0.21.0

@@ -25,6 +25,8 @@ setup(
     install_requires=[
         'terralego==0.1',
         'Django',
+        'django-leaflet==0.21.0',
+        'django-geojson[field]==2.10.0',
     ],
     test_suite='nose.collector',
     tests_require=['nose'],
