@@ -75,7 +75,6 @@ class GeoDirectoryMixinTest(TestCase):
         tags = mocked_post.mock_calls[0][2]['data']['tags']
         self.assertEqual(tags, json.dumps(['django_terralego.Dummy']))
 
-
     @mock.patch('requests.post')
     def test_save_with_model_path_in_wrong_position_in_tags(self, mocked_post):
         mocked_response = mock.MagicMock()
