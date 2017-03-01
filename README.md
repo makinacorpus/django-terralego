@@ -1,30 +1,20 @@
-# Terralego
+# Django Terralego
 
 ## Getting started
 
-Install the terralego python binding:
+Install django-terralego:
 
 ```shell
-$ pip install terralego
+$ pip install django-terralego
 ```
 
-You need to set the configuration before using the different methods:
+Configure terralego by updating your `settings.py`:
 
 ```python
-from terralego.conf import settings
-
-settings.USER = 'my_user'
-settings.PASSWORD = 'my_password'
-```
-
-Alternatively, you can set the `TERRALEGO_USER` and `TERRALEGO_PASSWORD` environment variables.
-
-You can now use the terralego services, for example:
-
-```python
-from terralego.geodirectory import create_entry
-
-entry_id = create_entry('POINT(47.2556155 -1.5364181)', ["city", "nantes"])
+TERRALEGO = {
+    'USER': 'user',
+    'PASSWORD': 'password',
+}
 ```
 
 
