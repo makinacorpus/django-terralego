@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -55,7 +56,7 @@ class GeoDirectoryMixin(models.Model):
         """
         Get the terralego entry related to self.terralego_id and update the instance tags and geometry.
         """
-        if self.terralego_id is not None:
+        if self.terralego_id is not None and settings.TERRALEGO.get('ENABLED', True):
             data = geodirectory.get_entry(self.terralego_id)
             self._update_from_terralego_data(data)
 
@@ -73,6 +74,6 @@ class GeoDirectoryMixin(models.Model):
 
     def save(self, *args, **kwargs):
         terralego_commit = kwargs.pop('terralego_commit', True)
-        if terralego_commit and self.terralego_geometry is not None:
+        if terralego_commit and self.terralego_geometry is not None and settings.TERRALEGO.get('ENABLED', True):
             self._save_to_terralego()
         return super(GeoDirectoryMixin, self).save(*args, **kwargs)

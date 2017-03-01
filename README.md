@@ -17,6 +17,14 @@ TERRALEGO = {
 }
 ```
 
+You can disabled the requests made to terralego by setting the terrelago `ENABLED` setting to `False`:
+
+```python
+TERRALEGO = {
+    'ENABLED': False,
+}
+```
+
 
 ## Exceptions
 
