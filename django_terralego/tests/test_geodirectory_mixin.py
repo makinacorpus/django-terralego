@@ -61,7 +61,7 @@ class GeoDirectoryMixinTest(TestCase):
         mocked_response.json.return_value = GEOJSON_SAMPLE
         mocked_get.return_value = mocked_response
         dummy = Dummy(terralego_id=GEOJSON_SAMPLE['id'])
-        dummy._update_from_terralego_entry()
+        dummy.update_from_terralego_entry()
         self.assertEqual(dummy.terralego_geometry, GEOJSON_SAMPLE['geometry'])
         self.assertEqual(dummy.terralego_tags, json.dumps(GEOJSON_SAMPLE['properties']['tags']))
         self.assertEqual(mocked_get.call_count, 1)

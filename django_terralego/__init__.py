@@ -1,16 +1,10 @@
 import os
 
-from django.conf import settings
+from .conf import TERRALEGO
 
-
-try:
-    terralego_settings = settings.TERRALEGO
-except AttributeError:
-    terralego_settings = {}
-
-if 'URL' in terralego_settings:
-    os.environ['TERRALEGO_URL'] = terralego_settings['URL']
-if 'USER' in terralego_settings:
-    os.environ['TERRALEGO_USER'] = terralego_settings['USER']
-if 'PASSWORD' in terralego_settings:
-    os.environ['TERRALEGO_PASSWORD'] = terralego_settings['PASSWORD']
+if 'URL' in TERRALEGO:
+    os.environ['TERRALEGO_URL'] = TERRALEGO['URL']
+if 'USER' in TERRALEGO:
+    os.environ['TERRALEGO_USER'] = TERRALEGO['USER']
+if 'PASSWORD' in TERRALEGO:
+    os.environ['TERRALEGO_PASSWORD'] = TERRALEGO['PASSWORD']

@@ -28,7 +28,7 @@ class GeoDirectoryMixin(models.Model):
     class Meta:
         abstract = True
 
-    def _update_from_terralego_data(self, data):
+    def update_from_terralego_data(self, data):
         """
         Set self.geometry and self.tags with the values in data and cache it.
 
@@ -52,15 +52,15 @@ class GeoDirectoryMixin(models.Model):
             tags.insert(0, model_path)
         return tags
 
-    def _update_from_terralego_entry(self):
+    def update_from_terralego_entry(self):
         """
         Get the terralego entry related to self.terralego_id and update the instance tags and geometry.
         """
         if self.terralego_id is not None and conf.TERRALEGO.get('ENABLED', True):
             data = geodirectory.get_entry(self.terralego_id)
-            self._update_from_terralego_data(data)
+            self.update_from_terralego_data(data)
 
-    def _save_to_terralego(self):
+    def save_to_terralego(self):
         """
         Create or update the entry in terralego, adding the model_path to the tags if needed.
         """
@@ -70,10 +70,10 @@ class GeoDirectoryMixin(models.Model):
             data = geodirectory.create_entry(self.terralego_geometry, self.terralego_tags)
         else:
             data = geodirectory.update_entry(self.terralego_id, self.terralego_geometry, self.terralego_tags)
-        self._update_from_terralego_data(data)
+        self.update_from_terralego_data(data)
 
     def save(self, *args, **kwargs):
         terralego_commit = kwargs.pop('terralego_commit', True)
         if terralego_commit and self.terralego_geometry is not None and conf.TERRALEGO.get('ENABLED', True):
-            self._save_to_terralego()
+            self.save_to_terralego()
         return super(GeoDirectoryMixin, self).save(*args, **kwargs)
