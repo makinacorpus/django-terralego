@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name='django-terralego',
-    version='0.1',
+    version='0.2',
     description='Django mixins for Terralego services.',
     long_description=readme(),
     classifiers=[
