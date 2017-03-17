@@ -1,5 +1,7 @@
 # Django Terralego
 
+[![Build Status](https://travis-ci.org/makinacorpus/django-terralego.svg?branch=master)](https://travis-ci.org/makinacorpus/django-terralego) [![Documentation Status](https://readthedocs.org/projects/django-terralego/badge/?version=latest)](http://django-terralego.readthedocs.io/en/latest/?badge=latest)
+
 ## Getting started
 
 Install django-terralego:
