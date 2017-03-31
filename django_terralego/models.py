@@ -4,9 +4,11 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from djgeojson.fields import GeometryField
+from requests import HTTPError
 
 from terralego import geodirectory
 from django_terralego import conf
+from django_terralego.utils import convert_geodirectory_entry_to_model_instance
 
 
 class GeoDirectoryMixin(models.Model):
@@ -27,6 +29,8 @@ class GeoDirectoryMixin(models.Model):
 
     class Meta:
         abstract = True
+
+    # Save/update handling
 
     def update_from_terralego_data(self, data):
         """
@@ -77,3 +81,18 @@ class GeoDirectoryMixin(models.Model):
         if terralego_commit and self.terralego_geometry is not None and conf.TERRALEGO.get('ENABLED', True):
             self.save_to_terralego()
         return super(GeoDirectoryMixin, self).save(*args, **kwargs)
+
+    # Geodirectory methods
+
+    def closest(self, tags=None):
+        """
+        Get the closest entry of this entry.
+        
+        :param tags: Optional. A list of tags to filter the entries on which the request is made.
+        :return: An instance of GeoDirectoryMixin if the entry is one, or a dict describing the entry.
+        """
+        try:
+            entry = geodirectory.closest(self.terralego_id, tags)
+        except HTTPError:
+            return None
+        return convert_geodirectory_entry_to_model_instance(entry)
