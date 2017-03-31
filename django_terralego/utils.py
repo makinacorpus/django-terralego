@@ -12,6 +12,6 @@ def convert_geodirectory_entry_to_model_instance(entry):
     except LookupError:
         return entry
     try:
-        return model.objects.get(terralego_id=entry['properties']['terralego_id'])
-    except model.DoesNotExists:
+        return model.objects.get(terralego_id=entry['id'])
+    except model.DoesNotExist:
         return entry

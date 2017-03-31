@@ -1,4 +1,7 @@
 import json
+
+from copy import deepcopy
+
 try:
     from unittest import mock
 except ImportError:
@@ -91,3 +94,27 @@ class GeoDirectoryMixinTest(TestCase):
         self.assertEqual(mocked_post.call_count, 1)
         tags = mocked_post.mock_calls[0][2]['data']['tags']
         self.assertEqual(tags, json.dumps(['django_terralego.Dummy', 'test']))
+
+    @mock.patch('requests.get')
+    def test_closest_with_right_tag(self, mocked_get):
+        mocked_response = mock.MagicMock()
+        mocked_response.json.return_value = GEOJSON_SAMPLE
+        mocked_get.return_value = mocked_response
+        dummy = Dummy.objects.create(terralego_id=GEOJSON_SAMPLE['id'])
+        dummy2 = Dummy.objects.create(terralego_id="123234fb-ec81-4189-ab6b-ac9b1483e123")
+        entry = dummy2.closest()
+        self.assertEqual(entry, dummy)
+        self.assertEqual(mocked_get.call_count, 1)
+
+    @mock.patch('requests.get')
+    def test_closest_with_bad_tag(self, mocked_get):
+        mocked_response = mock.MagicMock()
+        return_value = deepcopy(GEOJSON_SAMPLE)
+        return_value['properties']['tags'] = []
+        mocked_response.json.return_value = return_value
+        mocked_get.return_value = mocked_response
+        dummy = Dummy.objects.create()
+        entry = dummy.closest()
+        self.assertIsInstance(entry, dict)
+        self.assertDictEqual(entry, return_value)
+        self.assertEqual(mocked_get.call_count, 1)
