@@ -2,7 +2,10 @@ from django.apps import apps
 
 
 def convert_geodirectory_entry_to_model_instance(entry):
-    if not entry['properties']['tags']:
+    try:
+        if not entry['properties']['tags']:
+            return entry
+    except KeyError:
         return entry
     model_name = entry['properties']['tags'][0]
     if '.' not in model_name:
