@@ -76,14 +76,17 @@ class GeoDirectoryMixin(models.Model):
             data = geodirectory.update_entry(self.terralego_id, self.terralego_geometry, self.terralego_tags)
         self.update_from_terralego_data(data)
 
-    def delete_from_terralego(self):
+    def delete_from_terralego(self, set_id_null=True):
         """
         Delete the entry in terralego
         """
         geodirectory.delete_entry(self.terralego_id)
+        if set_id_null:
+            self.terralego_id = None
+            self.save(terralego_commit=False)
 
     def delete(self, *args, **kwargs):
-        self.delete_from_terralego()
+        self.delete_from_terralego(set_id_null=False)
         return super(GeoDirectoryMixin, self).delete(*args, **kwargs)
 
     def save(self, *args, **kwargs):
