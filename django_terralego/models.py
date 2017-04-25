@@ -72,11 +72,12 @@ class GeoDirectoryMixin(models.Model):
         Create or update the entry in terralego, adding the model_path to the tags if needed.
         """
         tags = self.terralego_tags and json.loads(self.terralego_tags) or None
-        self.terralego_tags = self._update_tags_with_model(tags)
+        tags = self._update_tags_with_model(tags)
+        self.terralego_tags = json.dumps(tags)  # Save tags in case of error before the update_from_terralego_data
         if self.terralego_id is None:
-            data = geodirectory.create_entry(self.terralego_geometry, self.terralego_tags)
+            data = geodirectory.create_entry(self.terralego_geometry, tags)
         else:
-            data = geodirectory.update_entry(self.terralego_id, self.terralego_geometry, self.terralego_tags)
+            data = geodirectory.update_entry(self.terralego_id, self.terralego_geometry, tags)
         self.update_from_terralego_data(data)
 
     def delete_from_terralego(self, set_id_null=True):
