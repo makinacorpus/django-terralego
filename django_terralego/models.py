@@ -1,14 +1,17 @@
 import json
+import logging
 
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from djgeojson.fields import GeometryField
-from requests import HTTPError
+from requests import HTTPError, RequestException
 
 from terralego import geodirectory
 from django_terralego import conf
 from django_terralego.utils import convert_geodirectory_entry_to_model_instance
+
+logger = logging.getLogger(__name__)
 
 
 class GeoDirectoryMixin(models.Model):
@@ -92,7 +95,10 @@ class GeoDirectoryMixin(models.Model):
     def save(self, *args, **kwargs):
         terralego_commit = kwargs.pop('terralego_commit', True)
         if terralego_commit and self.terralego_geometry is not None and conf.TERRALEGO.get('ENABLED', True):
-            self.save_to_terralego()
+            try:
+                self.save_to_terralego()
+            except RequestException as e:
+                logger.error('Error while saving to terralego: {0}'.format(e))
         return super(GeoDirectoryMixin, self).save(*args, **kwargs)
 
     # Geodirectory methods
@@ -106,6 +112,6 @@ class GeoDirectoryMixin(models.Model):
         """
         try:
             entry = geodirectory.closest(self.terralego_id, tags)
-        except HTTPError:
-            return None
+        except RequestException as e:
+            return logger.error('Error while getting closest: {0}'.format(e))
         return convert_geodirectory_entry_to_model_instance(entry)
