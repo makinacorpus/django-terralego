@@ -90,7 +90,11 @@ class GeoDirectoryMixin(models.Model):
             self.save(terralego_commit=False)
 
     def delete(self, *args, **kwargs):
-        self.delete_from_terralego(set_id_null=False)
+        if self.terralego_id:
+            try:
+                self.delete_from_terralego(set_id_null=False)
+            except RequestException as e:
+                logger.error('Error while deleting from terralego: {0}'.format(e))
         return super(GeoDirectoryMixin, self).delete(*args, **kwargs)
 
     def save(self, *args, **kwargs):
