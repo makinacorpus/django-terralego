@@ -23,7 +23,7 @@ setup(
     license='MIT',
     packages=['django_terralego'],
     install_requires=[
-        'terralego==0.1',
+        'terralego>=0.1,<=0.2',
         'Django',
         'django-leaflet==0.21.0',
         'django-geojson[field]==2.10.0',
